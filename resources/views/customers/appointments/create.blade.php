@@ -32,14 +32,14 @@
 <script>
 $(function() {
     $('#appointment_time').daterangepicker({
-        singleDatePicker: true,
-        timePicker: true,
-        timePicker24Hour: true,
-        locale: { format: 'YYYY-MM-DD HH:mm' },
-        isInvalidDate: function(date) {
-            const hour = date.hour();
-            return hour < 8 || hour >= 18 || hour === 12;
-        }
+    singleDatePicker: true,
+    timePicker: true,
+    timePicker24Hour: false,
+    locale: { format: 'YYYY-MM-DD hh:mm A' },
+    isInvalidDate: function(date) {
+    const hour = date.hour();
+    return hour < 8 || hour >= 18 || hour === 12;
+    }
     });
 });
 </script>

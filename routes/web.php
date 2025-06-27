@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AppointmentController as AdminAppointment;
 use App\Http\Controllers\Staff\AppointmentController as StaffAppointment;
 use App\Http\Controllers\Customer\AppointmentController as CustomerAppointment;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\Admin\AppointmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +26,13 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])->group(function () {
+    Route::get('services', [App\Http\Controllers\Admin\ServiceController::class, 'index'])->name('services.index');
+    Route::post('services/{service}/toggle', [App\Http\Controllers\Admin\ServiceController::class, 'toggleAvailability'])->name('services.toggle');
+    Route::get('/appointments-calendar', [AppointmentController::class, 'calendar'])->name('appointments.calendar');
+    Route::resource('appointments', AppointmentController::class);
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -56,7 +64,3 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
 });
 
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])->group(function () {
-    Route::get('services', [App\Http\Controllers\Admin\ServiceController::class, 'index'])->name('services.index');
-    Route::post('services/{service}/toggle', [App\Http\Controllers\Admin\ServiceController::class, 'toggleAvailability'])->name('services.toggle');
-});

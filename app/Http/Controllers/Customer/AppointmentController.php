@@ -38,11 +38,11 @@ class AppointmentController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'service_id' => 'required|exists:services,id',
-            'start_time' => 'required|date_format:Y-m-d H:i'
+        'service_id' => 'required|exists:services,id',
+        'start_time' => 'required|date_format:Y-m-d h:i A'
         ]);
-
-        $start = Carbon::parse($request->start_time);
+        
+        $start = Carbon::createFromFormat('Y-m-d h:i A', $request->start_time);
         $service = Service::findOrFail($request->service_id);
         $end = $start->copy()->addMinutes($service->duration);
 
@@ -85,11 +85,11 @@ class AppointmentController extends Controller
         }
 
         $request->validate([
-            'service_id' => 'required|exists:services,id',
-            'start_time' => 'required|date_format:Y-m-d H:i'
+        'service_id' => 'required|exists:services,id',
+        'start_time' => 'required|date_format:Y-m-d h:i A'
         ]);
-
-        $start = Carbon::parse($request->start_time);
+        
+        $start = Carbon::createFromFormat('Y-m-d h:i A', $request->start_time);
         $service = Service::findOrFail($request->service_id);
         $end = $start->copy()->addMinutes($service->duration);
 
