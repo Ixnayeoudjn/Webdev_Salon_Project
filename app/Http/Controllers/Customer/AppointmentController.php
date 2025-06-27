@@ -52,34 +52,18 @@ class AppointmentController extends Controller
             return back()->withErrors('Booking not allowed during lunch or off-hours.')->withInput();
         }
 
-        // Check for overlapping or adjacent bookings for this customer
+        // Check for overlapping bookings for this customer
         $customerId = Auth::id();
-        $bufferMinutes = 60; // 1 hour before or after
-
         $conflictingAppointment = Appointment::where('customer_id', $customerId)
-            ->where('status', '!=', 'Cancelled')
-            ->where(function($query) use ($start, $end, $bufferMinutes) {
-                $query->where(function($q) use ($start, $end, $bufferMinutes) {
-                    $q->whereBetween('start_time', [
-                        $start->copy()->subMinutes($bufferMinutes),
-                        $end->copy()->addMinutes($bufferMinutes - 1)
-                    ]);
-                })
-                ->orWhere(function($q) use ($start, $end, $bufferMinutes) {
-                    $q->whereBetween('end_time', [
-                        $start->copy()->subMinutes($bufferMinutes + 1),
-                        $end->copy()->addMinutes($bufferMinutes)
-                    ]);
-                })
-                ->orWhere(function($q) use ($start, $end) {
-                    $q->where('start_time', '<=', $start)
-                      ->where('end_time', '>=', $end);
-                });
-            })
-            ->first();
-
+        ->where('status', '!=', 'Cancelled')
+        ->where(function($query) use ($start, $end) {
+        $query->where('start_time', '<', $end)
+        ->where('end_time', '>', $start);
+        })
+        ->first();
+        
         if ($conflictingAppointment) {
-            return back()->withErrors('There is already an appointment at or near this time. Please book at least 1 hour before or after your existing bookings.')->withInput();
+        return back()->withErrors('This appointment overlaps with an existing booking.')->withInput();
         }
 
         // Show confirmation page, do not save yet
@@ -112,33 +96,17 @@ class AppointmentController extends Controller
 
         // Double-check for conflicts before saving
         $customerId = Auth::id();
-        $bufferMinutes = 60;
-
         $conflictingAppointment = Appointment::where('customer_id', $customerId)
-            ->where('status', '!=', 'Cancelled')
-            ->where(function($query) use ($start, $end, $bufferMinutes) {
-                $query->where(function($q) use ($start, $end, $bufferMinutes) {
-                    $q->whereBetween('start_time', [
-                        $start->copy()->subMinutes($bufferMinutes),
-                        $end->copy()->addMinutes($bufferMinutes - 1)
-                    ]);
-                })
-                ->orWhere(function($q) use ($start, $end, $bufferMinutes) {
-                    $q->whereBetween('end_time', [
-                        $start->copy()->subMinutes($bufferMinutes + 1),
-                        $end->copy()->addMinutes($bufferMinutes)
-                    ]);
-                })
-                ->orWhere(function($q) use ($start, $end) {
-                    $q->where('start_time', '<=', $start)
-                      ->where('end_time', '>=', $end);
-                });
-            })
-            ->first();
-
+        ->where('status', '!=', 'Cancelled')
+        ->where(function($query) use ($start, $end) {
+        $query->where('start_time', '<', $end)
+        ->where('end_time', '>', $start);
+        })
+        ->first();
+        
         if ($conflictingAppointment) {
-            return redirect()->route('customer.appointments.create')
-                ->withErrors('There is already an appointment at or near this time. Please book at least 1 hour before or after your existing bookings.');
+        return redirect()->route('customer.appointments.create')
+        ->withErrors('This appointment overlaps with an existing booking.');
         }
 
         $appointment = new Appointment();

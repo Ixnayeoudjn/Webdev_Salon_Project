@@ -2,6 +2,7 @@
 @section('content')
 <div class="container">
     <h2>My Appointments</h2>
+    <a href="{{ route('customer.appointments.create') }}" class="btn btn-primary mb-3" style="text-decoration-line: underline">Create Appointment</a>
     <h4>Upcoming</h4>
     <ul>
         @foreach($upcoming as $appointment)

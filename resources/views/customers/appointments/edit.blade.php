@@ -24,7 +24,7 @@
             <textarea name="notes" class="form-control">{{ $appointment->notes }}</textarea>
         </div>
 
-        <button type="submit" class="btn btn-success">Update</button>
+        <button type="submit" class="btn btn-success" style="text-decoration-line: underline">Update</button>
     </form>
 </div>
 

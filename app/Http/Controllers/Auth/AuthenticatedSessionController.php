@@ -9,9 +9,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Spatie\Permission\Traits\HasRoles;
 
 class AuthenticatedSessionController extends Controller
 {
+    use HasRoles;
     /**
      * Display the login view.
      */
@@ -29,6 +31,17 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Redirect customers to their appointments page after login
+        if (Auth::user()->hasRole('customer')) {
+        return redirect()->route('customer.appointments.index');
+        }
+        // Redirect staff to their appointments page after login
+        if (Auth::user()->hasRole('staff')) {
+        return redirect()->route('staff.appointments.index');
+        }
+                if (Auth::user()->hasRole('super-admin')) {
+        return redirect()->route('admin.appointments.calendar');
+        }
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 

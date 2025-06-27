@@ -18,8 +18,8 @@
         <input type="hidden" name="start_time" value="{{ $summary['start_time'] }}">
         <input type="hidden" name="end_time" value="{{ $summary['end_time'] }}">
         <input type="hidden" name="notes" value="{{ $summary['notes'] }}">
-        <button type="submit" class="btn btn-success">Confirm Booking</button>
-        <a href="{{ route('customer.appointments.create') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-success" style="text-decoration-line: underline">Confirm Booking</button>
+        <a href="{{ route('customer.appointments.create') }}" class="btn btn-secondary" style="text-decoration-line: underline">Cancel</a>
     </form>
 </div>
 @endsection

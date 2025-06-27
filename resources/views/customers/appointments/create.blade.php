@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('content')
 <div class="container">
+    <a href="{{ route('customer.appointments.index') }}" class="btn btn-secondary mb-3" style="text-decoration-line: underline">Back to Appointments</a>
     <h2>Book Appointment</h2>
     <form action="{{ route('customer.appointments.store') }}" method="POST">
         @csrf
@@ -25,7 +26,7 @@
             <textarea name="notes" class="form-control"></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary">Book</button>
+        <button type="submit" class="btn btn-primary" style="text-decoration-line: underline">Book</button>
     </form>
 </div>
 

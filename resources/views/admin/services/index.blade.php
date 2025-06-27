@@ -2,6 +2,11 @@
 @section('content')
 <div class="container">
     <h2>Manage Services</h2>
+        <div class="row">
+        <div class="col-md-12">
+            <a href="{{ route('admin.appointments.calendar') }}" class="btn btn-primary mb-3" style="text-decoration-line: underline">Calendar</a>
+        </div>
+    </div>
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
