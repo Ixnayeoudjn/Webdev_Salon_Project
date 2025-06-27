@@ -2,6 +2,15 @@
 @section('content')
 <div class="container">
     <h2>Create Appointment</h2>
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <ul>
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
     <form action="{{ route('admin.appointments.store') }}" method="POST">
         @csrf
         <div class="mb-3">
@@ -42,17 +51,16 @@
     </form>
 </div>
 <script>
-$(function() {
-    $('#appointment_time').daterangepicker({
+$('#appointment_time').daterangepicker({
     singleDatePicker: true,
     timePicker: true,
-    timePicker24Hour: false,
-    locale: { format: 'YYYY-MM-DD hh:mm A' },
+    timePicker24Hour: false, // Use 12-hour format
+    locale: { format: 'YYYY-MM-DD hh:mm A' }, // 12-hour with AM/PM
     isInvalidDate: function(date) {
-    const hour = date.hour();
-    return hour < 8 || hour >= 18 || hour === 12;
+        const hour = date.hour();
+        return hour < 8 || hour >= 18 || hour === 12;
     }
-    });
 });
+
 </script>
 @endsection

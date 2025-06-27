@@ -8,7 +8,6 @@ use App\Models\Appointment;
 use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class AppointmentController extends Controller
 {
@@ -19,7 +18,6 @@ class AppointmentController extends Controller
         $upcoming = $appointments->filter(function($a) use ($now) {
             return $a->start_time >= $now;
         });
-        // Add can_cancel property for each upcoming appointment
         foreach ($upcoming as $a) {
             $a->can_cancel = ($a->status !== 'Cancelled') && (Carbon::parse($a->start_time)->greaterThan($now));
         }
@@ -35,30 +33,122 @@ class AppointmentController extends Controller
         return view('customers.appointments.create', compact('services'));
     }
 
+    /**
+     * Step 1: Validate and show confirmation page
+     */
     public function store(Request $request)
     {
         $request->validate([
-        'service_id' => 'required|exists:services,id',
-        'start_time' => 'required|date_format:Y-m-d h:i A'
+            'service_id' => 'required|exists:services,id',
+            'start_time' => 'required|date_format:Y-m-d h:i A'
         ]);
-        
+
         $start = Carbon::createFromFormat('Y-m-d h:i A', $request->start_time);
         $service = Service::findOrFail($request->service_id);
         $end = $start->copy()->addMinutes($service->duration);
 
         // Validate operating hours
         if ($start->hour < 8 || $start->hour >= 18 || $start->hour === 12) {
-            return back()->withErrors('Booking not allowed during lunch or off-hours.');
+            return back()->withErrors('Booking not allowed during lunch or off-hours.')->withInput();
+        }
+
+        // Check for overlapping or adjacent bookings for this customer
+        $customerId = Auth::id();
+        $bufferMinutes = 60; // 1 hour before or after
+
+        $conflictingAppointment = Appointment::where('customer_id', $customerId)
+            ->where('status', '!=', 'Cancelled')
+            ->where(function($query) use ($start, $end, $bufferMinutes) {
+                $query->where(function($q) use ($start, $end, $bufferMinutes) {
+                    $q->whereBetween('start_time', [
+                        $start->copy()->subMinutes($bufferMinutes),
+                        $end->copy()->addMinutes($bufferMinutes - 1)
+                    ]);
+                })
+                ->orWhere(function($q) use ($start, $end, $bufferMinutes) {
+                    $q->whereBetween('end_time', [
+                        $start->copy()->subMinutes($bufferMinutes + 1),
+                        $end->copy()->addMinutes($bufferMinutes)
+                    ]);
+                })
+                ->orWhere(function($q) use ($start, $end) {
+                    $q->where('start_time', '<=', $start)
+                      ->where('end_time', '>=', $end);
+                });
+            })
+            ->first();
+
+        if ($conflictingAppointment) {
+            return back()->withErrors('There is already an appointment at or near this time. Please book at least 1 hour before or after your existing bookings.')->withInput();
+        }
+
+        // Show confirmation page, do not save yet
+        $summary = [
+            'service_id' => $service->id,
+            'service_name' => $service->name,
+            'service_price' => $service->price,
+            'service_duration' => $service->duration,
+            'start_time' => $start->format('Y-m-d h:i A'),
+            'end_time' => $end->format('Y-m-d h:i A'),
+            'notes' => $request->notes,
+        ];
+        return view('customers.appointments.confirm', compact('summary'));
+    }
+
+    /**
+     * Step 2: Actually save after confirmation
+     */
+    public function confirm(Request $request)
+    {
+        $request->validate([
+            'service_id' => 'required|exists:services,id',
+            'start_time' => 'required|date_format:Y-m-d h:i A',
+            'end_time'   => 'required|date_format:Y-m-d h:i A',
+        ]);
+
+        $start = Carbon::createFromFormat('Y-m-d h:i A', $request->start_time);
+        $end = Carbon::createFromFormat('Y-m-d h:i A', $request->end_time);
+        $service = Service::findOrFail($request->service_id);
+
+        // Double-check for conflicts before saving
+        $customerId = Auth::id();
+        $bufferMinutes = 60;
+
+        $conflictingAppointment = Appointment::where('customer_id', $customerId)
+            ->where('status', '!=', 'Cancelled')
+            ->where(function($query) use ($start, $end, $bufferMinutes) {
+                $query->where(function($q) use ($start, $end, $bufferMinutes) {
+                    $q->whereBetween('start_time', [
+                        $start->copy()->subMinutes($bufferMinutes),
+                        $end->copy()->addMinutes($bufferMinutes - 1)
+                    ]);
+                })
+                ->orWhere(function($q) use ($start, $end, $bufferMinutes) {
+                    $q->whereBetween('end_time', [
+                        $start->copy()->subMinutes($bufferMinutes + 1),
+                        $end->copy()->addMinutes($bufferMinutes)
+                    ]);
+                })
+                ->orWhere(function($q) use ($start, $end) {
+                    $q->where('start_time', '<=', $start)
+                      ->where('end_time', '>=', $end);
+                });
+            })
+            ->first();
+
+        if ($conflictingAppointment) {
+            return redirect()->route('customer.appointments.create')
+                ->withErrors('There is already an appointment at or near this time. Please book at least 1 hour before or after your existing bookings.');
         }
 
         $appointment = new Appointment();
-        $appointment->customer_id = Auth::id();
+        $appointment->customer_id = $customerId;
         $appointment->service_id = $service->id;
         $appointment->start_time = $start;
         $appointment->end_time = $end;
         $appointment->notes = $request->notes;
         $appointment->status = 'Pending';
-        $appointment->staff_id = null; // Staff will be assigned later
+        $appointment->staff_id = null;
         $appointment->save();
 
         return redirect()->route('customer.appointments.index')->with('success', 'Appointment booked!');
@@ -85,8 +175,8 @@ class AppointmentController extends Controller
         }
 
         $request->validate([
-        'service_id' => 'required|exists:services,id',
-        'start_time' => 'required|date_format:Y-m-d h:i A'
+            'service_id' => 'required|exists:services,id',
+            'start_time' => 'required|date_format:Y-m-d h:i A'
         ]);
         
         $start = Carbon::createFromFormat('Y-m-d h:i A', $request->start_time);

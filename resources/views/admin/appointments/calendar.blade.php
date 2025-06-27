@@ -33,14 +33,16 @@
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
         const { createCalendar, createViewMonthGrid, createViewWeek, createViewDay } = window.SXCalendar;
-        
-        // Convert Laravel appointments to Schedule-X events format
+
+        // Pass raw DB values to JS
         const appointments = @json($appointments);
+
+        // Use raw start_time and end_time for event positions
         const events = appointments.map(appointment => ({
             id: appointment.id,
             title: `${appointment.customer?.name || 'Unknown'} - ${appointment.service?.name || 'Unknown'}`,
             start: appointment.start_time ? appointment.start_time.replace(' ', 'T') : '',
-            end: appointment.end_time ? appointment.end_time.replace(' ', 'T') : appointment.start_time ? new Date(new Date(appointment.start_time).getTime() + 60*60*1000).toISOString().slice(0,16) : '',
+            end: appointment.end_time ? appointment.end_time.replace(' ', 'T') : '',
             description: `Staff: ${appointment.staff?.name || 'Unassigned'}\nStatus: ${appointment.status}\nNotes: ${appointment.notes || 'No notes'}`,
             calendarId: appointment.status === 'Cancelled' ? 'cancelled' : 'active'
         }));
@@ -73,18 +75,13 @@
                 }
             },
             callbacks: {
-                // Handle date clicks in month grid - redirect to table view
                 onClickDate(date) {
                     redirectToDateView(date);
                 },
-                
-                // Handle datetime clicks in week/day views - redirect to table view
                 onClickDateTime(dateTime) {
                     const date = dateTime.split(' ')[0];
                     redirectToDateView(date);
                 },
-                
-                // Handle event clicks - show appointment details
                 onEventClick(calendarEvent) {
                     const appointmentId = calendarEvent.id;
                     const appointment = appointments.find(app => app.id == appointmentId);
@@ -95,29 +92,48 @@
             }
         });
 
-        // Render the calendar
         calendar.render(document.getElementById('calendar'));
 
-        // Function to redirect to table view for a specific date
         function redirectToDateView(date) {
             const formattedDate = new Date(date).toISOString().split('T')[0];
             window.location.href = `{{ route('admin.appointments.index') }}?date=${formattedDate}`;
         }
 
-        // Function to show appointment details in a modal or alert
+        // Helper: Format DB time to 12-hour AM/PM
+        function formatTo12Hour(datetimeStr) {
+            if (!datetimeStr) return 'Not set';
+            // Accepts 'YYYY-MM-DD HH:mm:ss' or 'YYYY-MM-DDTHH:mm:ss'
+            let dt = datetimeStr.replace(' ', 'T');
+            if (dt.length === 16) dt += ':00'; // add seconds if missing
+            const dateObj = new Date(dt);
+            if (isNaN(dateObj.getTime())) return datetimeStr;
+            let hours = dateObj.getHours();
+            const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            return `${hours}:${minutes} ${ampm}`;
+        }
+
+        // Show details with 12-hour format
         function showAppointmentDetails(appointment) {
+            const start = formatTo12Hour(appointment.start_time);
+            const end = formatTo12Hour(appointment.end_time);
+            const date = appointment.start_time ? appointment.start_time.split(' ')[0] : '';
             const details = `
-                Customer: ${appointment.customer?.name || 'Unknown'}
-                Service: ${appointment.service?.name || 'Unknown'}
-                Staff: ${appointment.staff?.name || 'Unassigned'}
-                Date & Time: ${appointment.start_time ? new Date(appointment.start_time).toLocaleString() : 'Not set'}
-                Status: ${appointment.status}
-                Notes: ${appointment.notes || 'No notes'}
+            Customer: ${appointment.customer?.name || 'Unknown'}
+            Service: ${appointment.service?.name || 'Unknown'}
+            Staff: ${appointment.staff?.name || 'Unassigned'}
+            Date: ${date}
+            Time: ${appointment.start_time} - ${appointment.end_time}
+            Status: ${appointment.status}
+            Notes: ${appointment.notes || 'No notes'}
             `;
             alert(details);
         }
     });
 </script>
+
 
 <!-- Optional: Add some custom styles -->
 <style>

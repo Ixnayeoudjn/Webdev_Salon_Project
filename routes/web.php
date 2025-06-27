@@ -27,6 +27,8 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::post('/customer/appointments/confirm', [\App\Http\Controllers\Customer\AppointmentController::class, 'confirm'])->name('customer.appointments.confirm');
+
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])->group(function () {
     Route::get('services', [App\Http\Controllers\Admin\ServiceController::class, 'index'])->name('services.index');
     Route::post('services/{service}/toggle', [App\Http\Controllers\Admin\ServiceController::class, 'toggleAvailability'])->name('services.toggle');
