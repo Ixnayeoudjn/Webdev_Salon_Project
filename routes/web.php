@@ -24,6 +24,14 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+    $user = auth()->user();
+    if ($user->hasRole('super-admin')) {
+        return redirect()->route('admin.appointments.calendar');
+    } elseif ($user->hasRole('staff')) {
+        return redirect()->route('staff.appointments.index');
+    } elseif ($user->hasRole('customer')) {
+        return redirect()->route('customer.appointments.index');
+    }
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
