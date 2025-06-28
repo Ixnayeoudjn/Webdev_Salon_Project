@@ -10,8 +10,8 @@
             @endif
         </h2>
         <div>
-            <a href="{{ route('admin.appointments.calendar') }}" class="btn btn-info">Calendar View</a>
-            <a href="{{ route('admin.appointments.create') }}" class="btn btn-primary">Create Appointment</a>
+            <a href="{{ route('admin.appointments.calendar') }}" class="btn btn-info" style="text-decoration-line: underline">Calendar View</a>
+            <a href="{{ route('admin.appointments.create') }}" class="btn btn-primary" style="text-decoration-line: underline">Create Appointment</a>
         </div>
     </div>
 

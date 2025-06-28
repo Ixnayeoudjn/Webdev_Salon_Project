@@ -2,6 +2,7 @@
 @section('content')
 <div class="container">
     <h2>Create Appointment</h2>
+    <a href="{{ route('admin.appointments.calendar') }}" class="btn btn-info" style="text-decoration-line: underline">Calendar View</a>
     @if($errors->any())
         <div class="alert alert-danger">
             <ul>
@@ -47,7 +48,7 @@
             <label>Notes</label>
             <textarea name="notes" class="form-control"></textarea>
         </div>
-        <button type="submit" class="btn btn-primary">Create</button>
+        <button type="submit" class="btn btn-primary" style="text-decoration-line: underline">Create</button>
     </form>
 </div>
 <script>
