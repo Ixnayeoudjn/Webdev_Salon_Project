@@ -87,7 +87,7 @@
     <body class="antialiased">
         <nav class="navbar">
             <div class="logo">
-                <a href="finalproject.html"><img src="{{ asset('public/images/logo.png') }}" alt="CopyCut Logo"></a>
+                <a href="finalproject.html"><img src="{{ asset('images/logo.png') }}" alt="CopyCut Logo"></a>
             </div>
             <div class="nav-links">
                 <a href="{{ route('login') }}">Login</a>
