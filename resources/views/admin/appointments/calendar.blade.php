@@ -7,7 +7,7 @@
         <div class="col-md-12">
             <a href="{{ route('admin.appointments.create') }}" class="btn btn-primary mb-3" style="text-decoration-line: underline">Create Appointment</a>
             <a href="{{ route('admin.appointments.index') }}" class="btn btn-secondary mb-3" style="text-decoration-line: underline">View All Appointments</a>
-                <a href="{{ route('admin.services.index') }}" class="btn btn-secondary mb-3" style="text-decoration-line: underline">Manage Services</a>
+            <a href="{{ route('admin.services.index') }}" class="btn btn-secondary mb-3" style="text-decoration-line: underline">Manage Services</a>
         </div>
     </div>
     

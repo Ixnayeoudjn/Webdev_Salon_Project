@@ -12,6 +12,7 @@
         <div>
             <a href="{{ route('admin.appointments.calendar') }}" class="btn btn-info" style="text-decoration-line: underline">Calendar View</a>
             <a href="{{ route('admin.appointments.create') }}" class="btn btn-primary" style="text-decoration-line: underline">Create Appointment</a>
+            <a href="{{ route('admin.services.index') }}" class="btn btn-secondary mb-3" style="text-decoration-line: underline">Manage Services</a>
         </div>
     </div>
 

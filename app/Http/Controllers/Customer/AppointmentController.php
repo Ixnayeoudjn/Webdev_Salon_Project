@@ -47,6 +47,11 @@ class AppointmentController extends Controller
         $service = Service::findOrFail($request->service_id);
         $end = $start->copy()->addMinutes($service->duration);
 
+        // Prevent booking in the past
+        if ($start->lessThan(Carbon::now())) {
+            return back()->withErrors('You cannot book an appointment in the past.')->withInput();
+        }
+
         // Validate operating hours
         if ($start->hour < 8 || $start->hour >= 18 || $start->hour === 12) {
             return back()->withErrors('Booking not allowed during lunch or off-hours.')->withInput();

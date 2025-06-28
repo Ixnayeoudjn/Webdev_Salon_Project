@@ -79,6 +79,11 @@ public function calendar()
         $service = Service::findOrFail($input['service_id']);
         $end = $start->copy()->addMinutes($service->duration);
 
+        // Prevent booking in the past
+        if ($start->lessThan(Carbon::now())) {
+            return back()->withErrors('You cannot book an appointment in the past.')->withInput();
+        }
+
         // Business rule checks
         if ($start->hour < 8 || $start->hour >= 18 || $start->hour === 12) {
             return back()->withErrors('Invalid time slot.')->withInput();

@@ -56,6 +56,7 @@ $('#appointment_time').daterangepicker({
     singleDatePicker: true,
     timePicker: true,
     timePicker24Hour: false, // Use 12-hour format
+    minDate: moment().startOf('day'), // Prevent selecting past dates
     locale: { format: 'YYYY-MM-DD hh:mm A' }, // 12-hour with AM/PM
     isInvalidDate: function(date) {
         const hour = date.hour();
