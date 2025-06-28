@@ -84,44 +84,32 @@ public function calendar()
             return back()->withErrors('Invalid time slot.')->withInput();
         }
 
-        // --- CUSTOMER 1-HOUR BUFFER VALIDATION ---
+        // --- CUSTOMER OVERLAP VALIDATION ---
         $customerId = $input['customer_id'];
-        $bufferMinutes = 60;
-
         $customerConflict = Appointment::where('customer_id', $customerId)
-            ->where('status', '!=', 'Cancelled')
-            ->where(function($query) use ($start, $end, $bufferMinutes) {
-                $query->where(function($q) use ($start, $end, $bufferMinutes) {
-                    $q->whereBetween('start_time', [
-                        $start->copy()->subMinutes($bufferMinutes),
-                        $end->copy()->addMinutes($bufferMinutes - 1)
-                    ]);
-                })
-                ->orWhere(function($q) use ($start, $end, $bufferMinutes) {
-                    $q->whereBetween('end_time', [
-                        $start->copy()->subMinutes($bufferMinutes + 1),
-                        $end->copy()->addMinutes($bufferMinutes)
-                    ]);
-                })
-                ->orWhere(function($q) use ($start, $end) {
-                    $q->where('start_time', '<=', $start)
-                      ->where('end_time', '>=', $end);
-                });
-            })
-            ->first();
-
+        ->where('status', '!=', 'Cancelled')
+        ->where(function($query) use ($start, $end) {
+        $query->where('start_time', '<', $end)
+        ->where('end_time', '>', $start);
+        })
+        ->first();
+        
         if ($customerConflict) {
-            return back()->withErrors('This customer already has an appointment at or near this time. Please book at least 1 hour before or after their existing bookings.')->withInput();
+        return back()->withErrors('This customer already has an overlapping appointment.')->withInput();
         }
-        // --- END CUSTOMER BUFFER VALIDATION ---
+        // --- END CUSTOMER OVERLAP VALIDATION ---
 
-        // Staff conflict check (existing logic)
-        $conflict = Appointment::where('staff_id', $input['staff_id'])
-            ->whereBetween('start_time', [$start, $end])
-            ->exists();
-
-        if ($conflict) {
-            return back()->withErrors('Staff already booked for this slot.')->withInput();
+        // Staff conflict check: first check for same date, then same staff, then overlap (all in one query)
+        $staffConflict = Appointment::whereDate('start_time', $start->toDateString())
+        ->where('staff_id', $input['staff_id'])
+        ->where('status', '!=', 'Cancelled')
+        ->where(function($query) use ($start, $end) {
+        $query->where('start_time', '<', $end)
+        ->where('end_time', '>', $start);
+        })
+        ->exists();
+        if ($staffConflict) {
+        return back()->withErrors('Staff already booked for this slot on the same date.')->withInput();
         }
 
         Appointment::create([
@@ -173,45 +161,34 @@ public function calendar()
             return back()->withErrors('Invalid time slot.');
         }
 
-        // --- CUSTOMER 1-HOUR BUFFER VALIDATION (for update) ---
+        // --- CUSTOMER OVERLAP VALIDATION (for update) ---
         $customerId = $request->customer_id;
-        $bufferMinutes = 60;
-
         $customerConflict = Appointment::where('customer_id', $customerId)
-            ->where('id', '!=', $id)
-            ->where('status', '!=', 'Cancelled')
-            ->where(function($query) use ($start, $end, $bufferMinutes) {
-                $query->where(function($q) use ($start, $end, $bufferMinutes) {
-                    $q->whereBetween('start_time', [
-                        $start->copy()->subMinutes($bufferMinutes),
-                        $end->copy()->addMinutes($bufferMinutes - 1)
-                    ]);
-                })
-                ->orWhere(function($q) use ($start, $end, $bufferMinutes) {
-                    $q->whereBetween('end_time', [
-                        $start->copy()->subMinutes($bufferMinutes + 1),
-                        $end->copy()->addMinutes($bufferMinutes)
-                    ]);
-                })
-                ->orWhere(function($q) use ($start, $end) {
-                    $q->where('start_time', '<=', $start)
-                      ->where('end_time', '>=', $end);
-                });
-            })
-            ->first();
-
+        ->where('id', '!=', $id)
+        ->where('status', '!=', 'Cancelled')
+        ->where(function($query) use ($start, $end) {
+        $query->where('start_time', '<', $end)
+        ->where('end_time', '>', $start);
+        })
+        ->first();
+        
         if ($customerConflict) {
-            return back()->withErrors('There is already an appointment at or near this time. Please book at least 1 hour before or after their existing bookings.');
+        return back()->withErrors('This customer already has an overlapping appointment.');
         }
-        // --- END CUSTOMER BUFFER VALIDATION ---
+        // --- END CUSTOMER OVERLAP VALIDATION ---
 
-        // Staff conflict check (existing logic)
-        $conflict = Appointment::where('staff_id', $request->staff_id)
-            ->where('id','!=',$id)
-            ->whereBetween('start_time', [$start, $end])
-            ->exists();
-        if ($conflict) {
-            return back()->withErrors('Staff already booked for this slot.');
+        // Staff conflict check: first check for same date, then same staff, then overlap (all in one query)
+        $staffConflict = Appointment::whereDate('start_time', $start->toDateString())
+        ->where('id', '!=', $id)
+        ->where('staff_id', $request->staff_id)
+        ->where('status', '!=', 'Cancelled')
+        ->where(function($query) use ($start, $end) {
+        $query->where('start_time', '<', $end)
+        ->where('end_time', '>', $start);
+        })
+        ->exists();
+        if ($staffConflict) {
+        return back()->withErrors('Staff already booked for this slot on the same date.');
         }
 
         $appointment->update([

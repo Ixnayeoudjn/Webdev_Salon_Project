@@ -56,6 +56,7 @@ class AppointmentController extends Controller
         $customerId = Auth::id();
         $conflictingAppointment = Appointment::where('customer_id', $customerId)
         ->where('status', '!=', 'Cancelled')
+        ->whereDate('start_time', $start->toDateString())
         ->where(function($query) use ($start, $end) {
         $query->where('start_time', '<', $end)
         ->where('end_time', '>', $start);
@@ -63,7 +64,7 @@ class AppointmentController extends Controller
         ->first();
         
         if ($conflictingAppointment) {
-        return back()->withErrors('This appointment overlaps with an existing booking.')->withInput();
+        return back()->withErrors('This appointment overlaps with an existing booking on the same date.')->withInput();
         }
 
         // Show confirmation page, do not save yet
@@ -98,6 +99,7 @@ class AppointmentController extends Controller
         $customerId = Auth::id();
         $conflictingAppointment = Appointment::where('customer_id', $customerId)
         ->where('status', '!=', 'Cancelled')
+        ->whereDate('start_time', $start->toDateString())
         ->where(function($query) use ($start, $end) {
         $query->where('start_time', '<', $end)
         ->where('end_time', '>', $start);
@@ -106,7 +108,7 @@ class AppointmentController extends Controller
         
         if ($conflictingAppointment) {
         return redirect()->route('customer.appointments.create')
-        ->withErrors('This appointment overlaps with an existing booking.');
+        ->withErrors('This appointment overlaps with an existing booking on the same date.');
         }
 
         $appointment = new Appointment();
