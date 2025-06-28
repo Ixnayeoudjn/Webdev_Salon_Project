@@ -105,8 +105,8 @@
                     <a href="finalproject.html"><img src="{{ asset('images/logo.png') }}" alt="CopyCut Logo"></a>
                 </div>
                 <div class="nav-links">
-                    <a href="login.html">Login</a>
-                    <a href="/register">Register</a>
+                    <a href="{{ route('login') }}">Login</a>
+                    <a href="{{ route('register') }}">Register</a>
                 </div>
             </nav>
 
