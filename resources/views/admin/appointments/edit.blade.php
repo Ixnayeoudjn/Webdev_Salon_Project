@@ -10,13 +10,14 @@
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="icon" href="{{ asset('icon.ico') }}">
 </head>
 <body>
     <nav class="navbar">
         <div class="logo">
-            <a href="{{ url('/') }}"><img src="{{ asset('images/Logo.png') }}" alt="CopyCut Logo"></a>
+            <a href="{{ route('admin.appointments.calendar') }}"><img src="{{ asset('images/Logo.png') }}" alt="CopyCut Logo"></a>
         </div>
         <div class="nav-links">
             <div class="user-menu">
@@ -26,13 +27,13 @@
                     <i class="ri-arrow-down-s-line" id="dropdown-arrow"></i>
                 </div>
                 <div class="dropdown-menu" id="user-dropdown">
-                    <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
-                        @csrf
-                        <input type="hidden" name="redirect" value="{{ url('/') }}">
-                        <button type="submit" class="dropdown-item" onclick="return confirm('Are you sure you want to sign out?')">
-                            <i class="ri-logout-box-line"></i>
-                            Sign Out
-                        </button>
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="margin: 0;">
+                    @csrf
+                    <input type="hidden" name="redirect" value="{{ url('/') }}">
+                    <button type="button" class="dropdown-item" id="logout-button">
+                        <i class="ri-logout-box-line"></i>
+                        Sign Out
+                    </button>
                     </form>
                 </div>
             </div>
@@ -575,5 +576,23 @@
             }
         });
     </script>
+        <script>
+  document.getElementById('logout-button').addEventListener('click', function(){
+    Swal.fire({
+      title: 'Sign Out',
+      text: "Are you sure you want to sign out?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      confirmButtonText: 'Yes, sign me out',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // submit the hidden form
+        document.getElementById('logout-form').submit();
+      }
+    });
+  });
+</script>
 </body>
 </html>
