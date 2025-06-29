@@ -94,12 +94,10 @@
                                             @endphp
                                             
                                             @if($canCancel)
-                                                <form action="{{ route('customer.appointments.destroy', $appointment->id) }}" method="POST" class="cancel-form">
+                                                <form action="{{ route('customer.appointments.destroy', $appointment->id) }}" method="POST" class="cancel-form" data-appointment-id="{{ $appointment->id }}">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="cancel-btn" onclick="return confirm('Are you sure you want to cancel this appointment?')">
-                                                        Cancel
-                                                    </button>
+                                                    <button type="button" class="cancel-btn sweet-cancel-button">Cancel</button>
                                                 </form>
                                             @else
                                                 <div class="cancel-disabled" style="color: #999; font-size: 0.85rem; font-style: italic;">
@@ -277,6 +275,27 @@
             // submit the hidden form
             document.getElementById('logout-form').submit();
         }
+        });
+    });
+    document.querySelectorAll('.sweet-cancel-button').forEach(button => {
+        button.addEventListener('click', function () {
+            const form = this.closest('form');
+            const appointmentId = form.getAttribute('data-appointment-id');
+
+            Swal.fire({
+                title: 'Cancel Appointment?',
+                text: "Are you sure you want to cancel this appointment?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#aaa',
+                confirmButtonText: 'Yes, cancel it',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
         });
     });
 </script>

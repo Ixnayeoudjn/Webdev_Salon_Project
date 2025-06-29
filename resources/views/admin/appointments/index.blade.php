@@ -151,13 +151,13 @@
                                                     <i class="ri-edit-2-fill"></i></i> Edit
                                                 </a>
                                             @endif
-                                            <form action="{{ route('admin.appointments.destroy', $appointment->id) }}" method="POST">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this appointment?')">
-                                                    <i class="ri-delete-bin-5-fill"></i> Delete
-                                                </button>
-                                            </form>
+                                                <form action="{{ route('admin.appointments.destroy', $appointment->id) }}" method="POST" class="delete-appointment-form" data-id="{{ $appointment->id }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="button" class="btn btn-sm btn-danger sweet-delete-button">
+                                                        <i class="ri-delete-bin-5-fill"></i> Delete
+                                                    </button>
+                                                </form>
                                         </div>
                                     </td>
                                 </tr>
@@ -253,6 +253,26 @@
       }
     });
   });
+      document.querySelectorAll('.sweet-delete-button').forEach(button => {
+        button.addEventListener('click', function () {
+            const form = this.closest('form');
+
+            Swal.fire({
+                title: 'Delete Appointment?',
+                text: "This action cannot be undone.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#aaa',
+                confirmButtonText: 'Yes, delete it',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
 </script>
 
 </body>
