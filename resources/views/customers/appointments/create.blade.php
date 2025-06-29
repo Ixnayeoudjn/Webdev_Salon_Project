@@ -44,16 +44,19 @@
         <div class="header"></div>
         
         <div class="form-container">
-            <div class="success-message" id="successMessage">
-                <i class="ri-check-circle-fill"></i>
-                Your appointment has been booked successfully! Redirecting to confirmation page...
-            </div>
+            <form id="bookingForm" method="POST" action="{{ route('customer.appointments.store') }}">
+                @csrf
 
-            <form id="bookingForm">
+                {{-- Hidden fields for real submission --}}
+                <input type="hidden" name="service_id" id="service_id">
+                <input type="hidden" name="start_time" id="start_time_input">
+                <input type="hidden" name="notes" id="notes_input">
+
+                {{-- Service selection --}}
                 <div class="form-group">
                     <label>Select Services <span class="service-count">(0 selected)</span></label>
                     <div class="service-grid" id="serviceGrid">
-                        <!-- Services will be populated by JavaScript -->
+                        <!-- populated by JS -->
                     </div>
                     <div class="selected-services-summary" id="selectedServicesSummary" style="display: none;">
                         <h4>Selected Services:</h4>
@@ -63,9 +66,9 @@
                             <strong>Total Price: ₱<span id="totalPrice">0</span></strong>
                         </div>
                     </div>
-                    <input type="hidden" name="service_id" id="service_id" />
                 </div>
 
+                {{-- Date & Time --}}
                 <div class="form-group">
                     <div class="datetime-container">
                         <div class="input-group">
@@ -75,16 +78,19 @@
                         <div class="input-group">
                             <label>Available Times</label>
                             <div class="time-slots" id="timeSlots">
-                                <!-- Time slots will be populated by JavaScript -->
+                                <!-- populated by JS -->
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {{-- Notes --}}
                 <div class="form-group">
                     <label for="notes">Special Requests or Notes</label>
                     <textarea id="notes" placeholder="Any specific requests or preferences? (Optional)"></textarea>
                 </div>
+
+                {{-- Submit --}}
                 <button type="submit" class="submit-btn" id="submitBtn" disabled>
                     Book Appointment
                 </button>
@@ -93,7 +99,7 @@
     </div>
 
     <script>
-        // Services data matching your seeder
+        // -- Data & state --
         const services = [
             { id: 1, name: 'Massage', category: 'Massage', duration: 30, price: 350, is_available: true },
             { id: 2, name: 'Haircut', category: 'Haircut', duration: 40, price: 500, is_available: true },
@@ -107,128 +113,85 @@
             { id: 10, name: 'Highlights', category: 'Color Vibrancy', duration: 120, price: 1800, is_available: true },
             { id: 11, name: 'Highlights w/ bleach', category: 'Color Vibrancy', duration: 120, price: 2300, is_available: true }
         ];
+        const timeSlots = ['08:00','09:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00'];
 
-        // Available time slots (8 AM to 6 PM, excluding 12 PM)
-        const timeSlots = [
-            '08:00', '09:00', '10:00', '11:00',
-            '13:00', '14:00', '15:00', '16:00', '17:00'
-        ];
-
-        let selectedServices = [];
-        let selectedTime = null;
+        let selectedService = null;
         let selectedDate = null;
+        let selectedTime = null;
 
-        // Initialize the form
-        function initializeForm() {
+        // -- Initialization --
+        document.addEventListener('DOMContentLoaded', () => {
             populateServices();
             setupDateInput();
-            setupFormValidation();
-        }
+            document.getElementById('bookingForm').addEventListener('submit', handleSubmit);
+        });
 
+        // -- Populate service cards --
         function populateServices() {
-            const serviceGrid = document.getElementById('serviceGrid');
-            serviceGrid.innerHTML = '';
-
-            services.forEach(service => {
-                const serviceCard = document.createElement('div');
-                serviceCard.className = `service-card ${!service.is_available ? 'unavailable' : ''}`;
-                serviceCard.innerHTML = `
-                    <div class="service-name"><strong>${service.name}</strong></div>
-                    <div class="service-category">${service.category}</div>
-                    <div class="service-price">₱${service.price}</div>
-                    <div class="service-duration">${service.duration} minutes</div>
-                    ${!service.is_available ? '<div class="service-status">Unavailable</div>' : ''}
+            const grid = document.getElementById('serviceGrid');
+            grid.innerHTML = '';
+            services.forEach(s => {
+                const card = document.createElement('div');
+                card.className = `service-card ${!s.is_available?'unavailable':''}`;
+                card.innerHTML = `
+                    <div class="service-name"><strong>${s.name}</strong></div>
+                    <div class="service-category">${s.category}</div>
+                    <div class="service-price">₱${s.price}</div>
+                    <div class="service-duration">${s.duration} minutes</div>
+                    ${!s.is_available?'<div class="service-status">Unavailable</div>':''}
                 `;
-
-                if (service.is_available) {
-                    serviceCard.addEventListener('click', () => toggleService(service, serviceCard));
+                if (s.is_available) {
+                    card.addEventListener('click', () => toggleService(s, card));
                 }
-
-                serviceGrid.appendChild(serviceCard);
+                grid.appendChild(card);
             });
         }
 
-        function toggleService(service, element) {
-            const isSelected = selectedServices.find(s => s.id === service.id);
-            
-            if (isSelected) {
-                selectedServices = selectedServices.filter(s => s.id !== service.id);
-                element.classList.remove('selected');
+        function toggleService(service, card) {
+            if (selectedService?.id === service.id) {
+                selectedService = null;
+                card.classList.remove('selected');
             } else {
-                selectedServices.push(service);
-                element.classList.add('selected');
+                document.querySelectorAll('.service-card.selected')
+                        .forEach(c=>c.classList.remove('selected'));
+                selectedService = service;
+                card.classList.add('selected');
             }
-            
-            updateServicesSummary();
-            updateHiddenInput();
+            updateServiceSummary();
             validateForm();
         }
 
-        function updateServicesSummary() {
-            const serviceCount = document.querySelector('.service-count');
+        function updateServiceSummary() {
+            const count = document.querySelector('.service-count');
             const summary = document.getElementById('selectedServicesSummary');
-            const summaryList = document.getElementById('summaryList');
-            const totalDuration = document.getElementById('totalDuration');
-            const totalPrice = document.getElementById('totalPrice');
-            
-            serviceCount.textContent = `(${selectedServices.length} selected)`;
-            
-            if (selectedServices.length === 0) {
+            const list   = document.getElementById('summaryList');
+            const dur    = document.getElementById('totalDuration');
+            const price  = document.getElementById('totalPrice');
+
+            count.textContent = `(${selectedService?1:0} selected)`;
+            if (!selectedService) {
                 summary.style.display = 'none';
                 return;
             }
-            
             summary.style.display = 'block';
-            summaryList.innerHTML = '';
-            let totalDurationValue = 0;
-            let totalPriceValue = 0;
-            
-            selectedServices.forEach(service => {
-                totalDurationValue += service.duration;
-                totalPriceValue += service.price;
-                
-                const summaryItem = document.createElement('div');
-                summaryItem.className = 'summary-item';
-                summaryItem.innerHTML = `
-                    <div class="summary-service-info">
-                        <div class="summary-service-name">${service.name}</div>
-                        <div class="summary-service-duration">${service.duration} minutes</div>
-                    </div>
-                    <div class="summary-service-price">₱${service.price}</div>
-                    <button class="remove-service-btn" onclick="removeService(${service.id})">Remove</button>
-                `;
-                summaryList.appendChild(summaryItem);
-            });
-            
-            totalDuration.textContent = totalDurationValue;
-            totalPrice.textContent = totalPriceValue;
+            list.innerHTML = `
+                <div class="summary-item">
+                  <div class="summary-service-info">
+                    <div class="summary-service-name">${selectedService.name}</div>
+                    <div class="summary-service-duration">${selectedService.duration} minutes</div>
+                  </div>
+                  <div class="summary-service-price">₱${selectedService.price}</div>
+                  <button type="button" class="remove-service-btn" onclick="toggleService(selectedService, this.parentNode.parentNode)">Remove</button>
+                </div>`;
+            dur.textContent   = selectedService.duration;
+            price.textContent = selectedService.price;
         }
 
-        function removeService(serviceId) {
-            selectedServices = selectedServices.filter(s => s.id !== serviceId);
-            
-            document.querySelectorAll('.service-card').forEach((card, index) => {
-                if (services[index].id === serviceId) {
-                    card.classList.remove('selected');
-                }
-            });
-            
-            updateServicesSummary();
-            updateHiddenInput();
-            validateForm();
-        }
-
-        function updateHiddenInput() {
-            const serviceIds = selectedServices.map(service => service.id).join(',');
-            document.getElementById('service_id').value = serviceIds;
-        }
-
+        // -- Date & time setup --
         function setupDateInput() {
-            const dateInput = document.getElementById('appointmentDate');
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.min = today;
-
-            dateInput.addEventListener('change', (e) => {
+            const dateEl = document.getElementById('appointmentDate');
+            dateEl.min = new Date().toISOString().split('T')[0];
+            dateEl.addEventListener('change', e => {
                 selectedDate = e.target.value;
                 selectedTime = null;
                 populateTimeSlots();
@@ -237,203 +200,65 @@
         }
 
         function populateTimeSlots() {
-            const timeSlotsContainer = document.getElementById('timeSlots');
-            timeSlotsContainer.innerHTML = '';
-
+            const container = document.getElementById('timeSlots');
+            container.innerHTML = '';
             if (!selectedDate) return;
-
-            timeSlots.forEach(time => {
-                const timeSlot = document.createElement('div');
-                timeSlot.className = 'time-slot';
-                
-                // Convert 24-hour format to 12-hour format for display
-                const [hours, minutes] = time.split(':');
-                const hour24 = parseInt(hours);
-                const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
-                const ampm = hour24 >= 12 ? 'PM' : 'AM';
-                const displayTime = `${hour12}:${minutes} ${ampm}`;
-                
-                timeSlot.textContent = displayTime;
-                timeSlot.dataset.time = time; // Store 24-hour format for processing
-                
-                timeSlot.addEventListener('click', () => selectTime(time, timeSlot));
-                timeSlotsContainer.appendChild(timeSlot);
-            });
-        }
-
-        function selectTime(time, element) {
-            document.querySelectorAll('.time-slot').forEach(slot => {
-                slot.classList.remove('selected');
-            });
-
-            element.classList.add('selected');
-            selectedTime = time;
-            validateForm();
-        }
-
-        function validateForm() {
-            const submitBtn = document.getElementById('submitBtn');
-            const isValid = selectedServices.length > 0 && selectedTime && selectedDate;
-            submitBtn.disabled = !isValid;
-        }
-
-        function setupFormValidation() {
-            const form = document.getElementById('bookingForm');
-            form.addEventListener('submit', handleSubmit);
-        }
-
-        async function handleSubmit(e) {
-            e.preventDefault();
-            
-            const notesInput = document.getElementById('notes');
-            const submitBtn = document.getElementById('submitBtn');
-            
-            if (selectedServices.length === 0 || !selectedTime || !selectedDate) {
-                alert('Please fill in all required fields.');
-                return;
-            }
-            
-            // Convert 24-hour time to 12-hour format with AM/PM (h:i A format)
-            const [hours, minutes] = selectedTime.split(':');
-            const hour24 = parseInt(hours);
-            
-            // Convert to 12-hour format (with leading zeros for both hour and minutes)
-            let hour12 = hour24 % 12;
-            if (hour12 === 0) hour12 = 12;  // Handle midnight (0) and noon (12)
-            
-            const ampm = hour24 >= 12 ? 'PM' : 'AM';
-            
-            // Format: h:i A but Laravel seems to expect leading zeros for hour too
-            const formattedTime = `${hour12.toString().padStart(2, '0')}:${minutes.padStart(2, '0')} ${ampm}`;
-            const appointmentDateTime = `${selectedDate} ${formattedTime}`;
-            
-            // Debug: Let's see what we're sending
-            console.log('Selected Date:', selectedDate);
-            console.log('Selected Time (24h):', selectedTime);
-            console.log('Formatted Time (12h):', formattedTime);
-            console.log('Final DateTime:', appointmentDateTime);
-            console.log('Selected Services:', selectedServices);
-            
-            const formData = {
-                service_id: selectedServices.map(service => service.id),
-                start_time: appointmentDateTime,
-                notes: notesInput.value || '',
-                _token: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            };
-            
-            console.log('Complete form data being sent:', formData);
-            
-            submitBtn.innerHTML = '<i class="ri-loader-4-line"></i> Booking...';
-            submitBtn.disabled = true;
-            
-            try {
-                const response = await fetch('/customer/appointments', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': formData._token,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
+            timeSlots.forEach(t => {
+                const slot = document.createElement('div');
+                slot.className = 'time-slot';
+                const [h,m] = t.split(':');
+                const hour24 = parseInt(h), hour12 = hour24%12||12;
+                const ampm = hour24>=12?'PM':'AM';
+                slot.textContent = `${hour12}:${m} ${ampm}`;
+                slot.dataset.time = t;
+                slot.addEventListener('click', () => {
+                    document.querySelectorAll('.time-slot.selected')
+                            .forEach(s=>s.classList.remove('selected'));
+                    slot.classList.add('selected');
+                    selectedTime = t;
+                    validateForm();
                 });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    console.log('Success response:', result);
-                    
-                    // Show success message with better styling
-                    const successMessage = document.getElementById('successMessage');
-                    successMessage.style.display = 'block';
-                    successMessage.scrollIntoView({ behavior: 'smooth' });
-                    
-                    // Hide the form to prevent duplicate submissions
-                    document.getElementById('bookingForm').style.display = 'none';
-                    
-                    // Determine appointment ID and redirect
-                    const appointmentId = result.appointment_id || result.id || result.data?.id;
-                    
-                    if (appointmentId) {
-                        console.log('Redirecting to confirm page with ID:', appointmentId);
-                        setTimeout(() => {
-                            window.location.href = `/customer/appointments/confirm/${appointmentId}`;
-                        }, 1500); // Reduced timeout for faster redirect
-                    } else {
-                        console.log('No appointment ID found, redirecting to appointments list');
-                        setTimeout(() => {
-                            window.location.href = '/customer/appointments';
-                        }, 1500);
-                    }
-                    
-                } else {
-                    console.error('HTTP Error:', response.status, response.statusText);
-                    console.error('Error response:', result);
-                    
-                    // Show detailed error information
-                    let errorMessage = 'Failed to book appointment:\n\n';
-                    
-                    if (response.status === 422 && result.errors) {
-                        // Validation errors - show detailed field errors
-                        errorMessage += 'Validation Errors:\n';
-                        Object.keys(result.errors).forEach(field => {
-                            errorMessage += `• ${field}: ${result.errors[field].join(', ')}\n`;
-                        });
-                        
-                        // Show what data was sent for debugging
-                        errorMessage += '\nData sent:\n';
-                        errorMessage += `• Date: ${selectedDate}\n`;
-                        errorMessage += `• Time: ${selectedTime} → ${appointmentDateTime}\n`;
-                        errorMessage += `• Services: ${selectedServices.map(s => s.name).join(', ')}\n`;
-                        
-                    } else if (response.status === 419) {
-                        errorMessage = 'Session expired. Please refresh the page and try again.';
-                        setTimeout(() => window.location.reload(), 2000);
-                    } else if (response.status === 401) {
-                        errorMessage = 'You are not authorized. Please log in and try again.';
-                        setTimeout(() => window.location.href = '/login', 2000);
-                    } else {
-                        errorMessage += result.message || `HTTP ${response.status}: ${response.statusText}`;
-                    }
-                    
-                    alert(errorMessage);
-                    
-                    // Reset button state
-                    submitBtn.innerHTML = 'Book Appointment';
-                    submitBtn.disabled = false;
-                }
-                
-            } catch (error) {
-                console.error('Booking error:', error);
-                alert('Network error. Please check your connection and try again.');
-                
-                // Reset button state
-                submitBtn.innerHTML = 'Book Appointment';
-                submitBtn.disabled = false;
-            }
+                container.appendChild(slot);
+            });
         }
 
+        // -- Enable submit when ready --
+        function validateForm() {
+            document.getElementById('submitBtn').disabled =
+                !(selectedService && selectedDate && selectedTime);
+        }
+
+        // -- On form submit, fill hidden and let Laravel handle redirect to confirm view --
+        function handleSubmit(e) {
+            e.preventDefault();
+            const notes = document.getElementById('notes').value || '';
+            // format to “YYYY-MM-DD hh:mm A”
+            const [h,m] = selectedTime.split(':');
+            let hr12 = parseInt(h)%12||12;
+            const ampm = parseInt(h)>=12?'PM':'AM';
+            const formatted = `${selectedDate} ${hr12.toString().padStart(2,'0')}:${m} ${ampm}`;
+
+            document.getElementById('service_id').value       = selectedService.id;
+            document.getElementById('start_time_input').value = formatted;
+            document.getElementById('notes_input').value      = notes;
+
+            e.target.submit();
+        }
+
+        // -- Dropdown menu toggle --
         function toggleDropdown() {
-            const dropdown = document.getElementById('user-dropdown');
+            const dd = document.getElementById('user-dropdown');
             const arrow = document.getElementById('dropdown-arrow');
-            
-            dropdown.classList.toggle('show');
-            arrow.style.transform = dropdown.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
+            dd.classList.toggle('show');
+            arrow.style.transform = dd.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
         }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const userMenu = document.querySelector('.user-menu');
-            const dropdown = document.getElementById('user-dropdown');
-            const arrow = document.getElementById('dropdown-arrow');
-            
-            if (userMenu && !userMenu.contains(event.target)) {
-                dropdown?.classList.remove('show');
-                if (arrow) arrow.style.transform = 'rotate(0deg)';
+        document.addEventListener('click', e => {
+            const menu = document.querySelector('.user-menu');
+            if (!menu.contains(e.target)) {
+                document.getElementById('user-dropdown').classList.remove('show');
+                document.getElementById('dropdown-arrow').style.transform = 'rotate(0deg)';
             }
         });
-
-        // Initialize the form when the page loads
-        document.addEventListener('DOMContentLoaded', initializeForm);
     </script>
 </body>
 </html>

@@ -36,54 +36,52 @@ class AppointmentController extends Controller
     /**
      * Step 1: Validate and show confirmation page
      */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'service_id' => 'required|exists:services,id',
-            'start_time' => 'required|date_format:Y-m-d h:i A'
-        ]);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'service_id' => 'required|exists:services,id',
+        'start_time' => 'required|date_format:Y-m-d h:i A'
+    ]);
 
-        $start = Carbon::createFromFormat('Y-m-d h:i A', $request->start_time);
-        $service = Service::findOrFail($request->service_id);
-        $end = $start->copy()->addMinutes($service->duration);
+    $start = Carbon::createFromFormat('Y-m-d h:i A', $validated['start_time']);
+    $service = Service::findOrFail($validated['service_id']);
+    $end = $start->copy()->addMinutes($service->duration);
 
-        // Prevent booking in the past
-        if ($start->lessThan(Carbon::now())) {
-            return back()->withErrors('You cannot book an appointment in the past.')->withInput();
-        }
+    if ($start->lessThan(now())) {
+        return back()->withErrors('You cannot book an appointment in the past.')->withInput();
+    }
 
-        // Validate operating hours
-        if ($start->hour < 8 || $start->hour >= 18 || $start->hour === 12) {
-            return back()->withErrors('Booking not allowed during lunch or off-hours.')->withInput();
-        }
+    if ($start->hour < 8 || $start->hour >= 18 || $start->hour === 12) {
+        return back()->withErrors('Booking not allowed during lunch or off-hours.')->withInput();
+    }
 
-        // Check for overlapping bookings for this customer
-        $customerId = Auth::id();
-        $conflictingAppointment = Appointment::where('customer_id', $customerId)
+    $customerId = Auth::id();
+    $conflict = Appointment::where('customer_id', $customerId)
         ->where('status', '!=', 'Cancelled')
         ->whereDate('start_time', $start->toDateString())
-        ->where(function($query) use ($start, $end) {
-        $query->where('start_time', '<', $end)
-        ->where('end_time', '>', $start);
-        })
-        ->first();
-        
-        if ($conflictingAppointment) {
-        return back()->withErrors('This appointment overlaps with an existing booking on the same date.')->withInput();
-        }
+        ->where(function ($q) use ($start, $end) {
+            $q->where('start_time', '<', $end)
+              ->where('end_time', '>', $start);
+        })->first();
 
-        // Show confirmation page, do not save yet
-        $summary = [
-            'service_id' => $service->id,
-            'service_name' => $service->name,
-            'service_price' => $service->price,
-            'service_duration' => $service->duration,
-            'start_time' => $start->format('Y-m-d h:i A'),
-            'end_time' => $end->format('Y-m-d h:i A'),
-            'notes' => $request->notes,
-        ];
-        return view('customers.appointments.confirm', compact('summary'));
+    if ($conflict) {
+        return back()->withErrors('This appointment overlaps with an existing booking.')->withInput();
     }
+
+    // Return confirmation view
+    $summary = [
+        'service_id' => $service->id,
+        'service_name' => $service->name,
+        'service_price' => $service->price,
+        'service_duration' => $service->duration,
+        'start_time' => $start->format('Y-m-d h:i A'),
+        'end_time' => $end->format('Y-m-d h:i A'),
+        'notes' => $request->notes,
+    ];
+
+    return view('customers.appointments.confirm', compact('summary'));
+}
+
 
     /**
      * Step 2: Actually save after confirmation
