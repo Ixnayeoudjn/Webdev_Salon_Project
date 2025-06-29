@@ -324,7 +324,6 @@ body {
     margin-bottom: 15px;
 }
 
-/* Updated main content layout - single column since sidebar is removed */
 .main-content {
     display: block;
     width: 100%;
