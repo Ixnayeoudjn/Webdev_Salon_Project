@@ -173,8 +173,11 @@ public function store(Request $request)
     {
         $appointment = Appointment::where('customer_id', Auth::id())->findOrFail($id);
 
-        if (Carbon::now()->diffInMinutes(Carbon::parse($appointment->start_time), false) < 60) {
-            return back()->withErrors('Cancellations must be made at least 1 hour before.');
+        // Check if appointment is less than 1 hour away
+        $minutesUntilAppointment = Carbon::now()->diffInMinutes(Carbon::parse($appointment->start_time), false);
+        
+        if ($minutesUntilAppointment < 60) {
+            return back()->withErrors('Cancellations must be made at least 1 hour before the appointment time. Your appointment is in ' . $minutesUntilAppointment . ' minutes.');
         }
 
         if ($appointment->status === 'Cancelled') {
@@ -184,6 +187,7 @@ public function store(Request $request)
         $appointment->status = 'Cancelled';
         $appointment->save();
 
-        return redirect()->route('customer.appointments.index')->with('success', 'Appointment cancelled.');
+        return redirect()->route('customer.appointments.index')->with('success', 'Appointment cancelled successfully.');
     }
+
 }
