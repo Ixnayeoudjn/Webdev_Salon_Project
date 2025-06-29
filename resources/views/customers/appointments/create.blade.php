@@ -100,19 +100,7 @@
 
     <script>
         // -- Data & state --
-        const services = [
-            { id: 1, name: 'Massage', category: 'Massage', duration: 30, price: 350, is_available: true },
-            { id: 2, name: 'Haircut', category: 'Haircut', duration: 40, price: 500, is_available: true },
-            { id: 3, name: 'Permanent Wave', category: 'Treatments', duration: 120, price: 1300, is_available: true },
-            { id: 4, name: 'Root Perm', category: 'Treatments', duration: 60, price: 800, is_available: true },
-            { id: 5, name: 'Hair Relax', category: 'Treatments', duration: 120, price: 2000, is_available: true },
-            { id: 6, name: 'Hair Rebond', category: 'Treatments', duration: 120, price: 4000, is_available: false },
-            { id: 7, name: 'Hair Spa', category: 'Treatments', duration: 40, price: 700, is_available: true },
-            { id: 8, name: 'Full Permanent', category: 'Color Vibrancy', duration: 120, price: 1800, is_available: true },
-            { id: 9, name: 'Root Retouch', category: 'Color Vibrancy', duration: 120, price: 1400, is_available: true },
-            { id: 10, name: 'Highlights', category: 'Color Vibrancy', duration: 120, price: 1800, is_available: true },
-            { id: 11, name: 'Highlights w/ bleach', category: 'Color Vibrancy', duration: 120, price: 2300, is_available: true }
-        ];
+        const services = @json($services);
         const timeSlots = ['08:00','09:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00'];
 
         let selectedService = null;
