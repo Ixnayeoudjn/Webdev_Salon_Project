@@ -52,141 +52,142 @@
     </div>
     
     <div class="appointments-container">
-    <div class="dashboard-header"></div>
+        <div class="dashboard-header"></div>
 
-    <a href="{{ route('customer.appointments.create') }}" class="create-appointment-btn">
-        <i class="ri-add-line"></i>
-        Create New Appointment
-    </a>
+        <a href="{{ route('customer.appointments.create') }}" class="create-appointment-btn">
+            <i class="ri-add-line"></i>
+            Create New Appointment
+        </a>
 
-    <div class="appointments-section">
-        <h4 class="section-title">Upcoming Appointments</h4>
-        @if($upcoming->count() > 0)
-            <ul class="appointments-list">
-                @foreach($upcoming as $appointment)
-                    <li class="appointment-item">
-                        <div class="appointment-main">
-                            <div class="appointment-service">
-                                <div class="service-icon">
-                                    <i class="ri-scissors-line"></i>
+        <div class="appointments-section">
+            <h4 class="section-title">Upcoming Appointments</h4>
+            @if($upcoming->count() > 0)
+                <ul class="appointments-list">
+                    @foreach($upcoming as $appointment)
+                        <li class="appointment-item">
+                            <div class="appointment-main">
+                                <div class="appointment-service">
+                                    <div class="service-icon">
+                                        <i class="ri-scissors-line"></i>
+                                    </div>
+                                    <span>{{ $appointment->service->name }}</span>
                                 </div>
-                                <span>{{ $appointment->service->name }}</span>
-                            </div>
-                            
-                            <div class="appointment-datetime">
-                                <div class="appointment-date">
-                                    {{ $appointment->start_time->format('M d, Y') }}
+                                
+                                <div class="appointment-datetime">
+                                    <div class="appointment-date">
+                                        {{ $appointment->start_time->format('M d, Y') }}
+                                    </div>
+                                    <div class="appointment-time">
+                                        {{ $appointment->start_time->format('h:i A') }}
+                                        @if($appointment->end_time)
+                                            - {{ $appointment->end_time->format('h:i A') }}
+                                        @endif
+                                    </div>
                                 </div>
-                                <div class="appointment-time">
-                                    {{ $appointment->start_time->format('h:i A') }}
-                                    @if($appointment->end_time)
-                                        - {{ $appointment->end_time->format('h:i A') }}
+                                
+                                <div class="appointment-status status-{{ strtolower($appointment->status) }}">
+                                    {{ $appointment->status }}
+                                </div>
+                                
+                                <div class="appointment-actions">
+                                    @if($appointment->status !== 'Cancelled' && $appointment->start_time >= now())
+                                        <form action="{{ route('customer.appointments.destroy', $appointment->id) }}" method="POST" class="cancel-form">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="cancel-btn" onclick="return confirm('Are you sure you want to cancel this appointment?')">
+                                                Cancel
+                                            </button>
+                                        </form>
                                     @endif
                                 </div>
                             </div>
                             
-                            <div class="appointment-status status-{{ strtolower($appointment->status) }}">
-                                {{ $appointment->status }}
-                            </div>
+                            @if($appointment->staff)
+                                <div style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">
+                                    <i class="ri-user-line"></i> Staff: {{ $appointment->staff->name }}
+                                </div>
+                            @endif
                             
-                            <div class="appointment-actions">
-                                @if($appointment->status !== 'Cancelled' && $appointment->start_time >= now())
-                                    <form action="{{ route('customer.appointments.destroy', $appointment->id) }}" method="POST" class="cancel-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="cancel-btn" onclick="return confirm('Are you sure you want to cancel this appointment?')">
-                                            Cancel
+                            @if($appointment->notes)
+                                <div style="margin-top: 1rem; padding: 1rem; background:rgb(248, 232, 237); border-radius: 8px; border-left: 4px solid #5A1A31;">
+                                    <div style="font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Notes</div>
+                                    <div style="color: #333;">{{ $appointment->notes }}</div>
+                                </div>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="ri-booklet-fill"></i></div>
+                    <div class="empty-message">No upcoming appointments</div>
+                    <div class="empty-submessage">Book your next appointment to get started</div>
+                </div>
+            @endif
+        </div>
+
+        <div class="appointments-section">
+            <h4 class="section-title">Past Appointments</h4>
+            @if($past->count() > 0)
+                <ul class="appointments-list">
+                    @foreach($past as $appointment)
+                        <li class="appointment-item">
+                            <div class="appointment-main">
+                                <div class="appointment-service">
+                                    <div class="service-icon">
+                                        <i class="ri-scissors-line"></i>
+                                    </div>
+                                    <span>{{ $appointment->service->name }}</span>
+                                </div>
+                                
+                                <div class="appointment-datetime">
+                                    <div class="appointment-date">
+                                        {{ $appointment->start_time->format('M d, Y') }}
+                                    </div>
+                                    <div class="appointment-time">
+                                        {{ $appointment->start_time->format('h:i A') }}
+                                        @if($appointment->end_time)
+                                            - {{ $appointment->end_time->format('h:i A') }}
+                                        @endif
+                                    </div>
+                                </div>
+                                
+                                <div class="appointment-status status-{{ strtolower($appointment->status) }}">
+                                    {{ $appointment->status }}
+                                </div>
+                                
+                                <div class="appointment-actions">
+                                    @if($appointment->status === 'Completed')
+                                        <button class="create-appointment-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin: 0;">
+                                            Book Again
                                         </button>
-                                    </form>
-                                @endif
-                            </div>
-                        </div>
-                        
-                        @if($appointment->staff)
-                            <div style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">
-                                <i class="ri-user-line"></i> Staff: {{ $appointment->staff->name }}
-                            </div>
-                        @endif
-                        
-                        @if($appointment->notes)
-                            <div style="margin-top: 1rem; padding: 1rem; background:rgb(248, 232, 237); border-radius: 8px; border-left: 4px solid #5A1A31;">
-                                <div style="font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Notes</div>
-                                <div style="color: #333;">{{ $appointment->notes }}</div>
-                            </div>
-                        @endif
-                    </li>
-                @endforeach
-            </ul>
-        @else
-            <div class="empty-state">
-                <div class="empty-icon"><i class="ri-booklet-fill"></i></div>
-                <div class="empty-message">No upcoming appointments</div>
-                <div class="empty-submessage">Book your next appointment to get started</div>
-            </div>
-        @endif
-    </div>
-
-    <div class="appointments-section">
-        <h4 class="section-title">Past Appointments</h4>
-        @if($past->count() > 0)
-            <ul class="appointments-list">
-                @foreach($past as $appointment)
-                    <li class="appointment-item">
-                        <div class="appointment-main">
-                            <div class="appointment-service">
-                                <div class="service-icon">
-                                    <i class="ri-scissors-line"></i>
-                                </div>
-                                <span>{{ $appointment->service->name }}</span>
-                            </div>
-                            
-                            <div class="appointment-datetime">
-                                <div class="appointment-date">
-                                    {{ $appointment->start_time->format('M d, Y') }}
-                                </div>
-                                <div class="appointment-time">
-                                    {{ $appointment->start_time->format('h:i A') }}
-                                    @if($appointment->end_time)
-                                        - {{ $appointment->end_time->format('h:i A') }}
                                     @endif
                                 </div>
                             </div>
                             
-                            <div class="appointment-status status-{{ strtolower($appointment->status) }}">
-                                {{ $appointment->status }}
-                            </div>
+                            @if($appointment->staff)
+                                <div style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">
+                                    <i class="ri-user-line"></i> Staff: {{ $appointment->staff->name }}
+                                </div>
+                            @endif
                             
-                            <div class="appointment-actions">
-                                @if($appointment->status === 'Completed')
-                                    <button class="create-appointment-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin: 0;">
-                                        Book Again
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                        
-                        @if($appointment->staff)
-                            <div style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">
-                                <i class="ri-user-line"></i> Staff: {{ $appointment->staff->name }}
-                            </div>
-                        @endif
-                        
-                        @if($appointment->notes)
-                            <div style="margin-top: 1rem; padding: 1rem; background: #f0f0f0; border-radius: 8px; border-left: 4px solid #667eea;">
-                                <div style="font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Notes</div>
-                                <div style="color: #333;">{{ $appointment->notes }}</div>
-                            </div>
-                        @endif
-                    </li>
-                @endforeach
-            </ul>
-        @else
-            <div class="empty-state">
-                <div class="empty-icon"><i class="ri-booklet-fill"></i></div>
-                <div class="empty-message">No past appointments</div>
-                <div class="empty-submessage">Your appointment history will appear here</div>
-            </div>
-        @endif
+                            @if($appointment->notes)
+                                <div style="margin-top: 1rem; padding: 1rem; background: #f0f0f0; border-radius: 8px; border-left: 4px solid #667eea;">
+                                    <div style="font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Notes</div>
+                                    <div style="color: #333;">{{ $appointment->notes }}</div>
+                                </div>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="ri-booklet-fill"></i></div>
+                    <div class="empty-message">No past appointments</div>
+                    <div class="empty-submessage">Your appointment history will appear here</div>
+                </div>
+            @endif
+        </div>
     </div>
 </body>
 

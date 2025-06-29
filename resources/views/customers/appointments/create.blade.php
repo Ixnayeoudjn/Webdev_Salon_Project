@@ -54,7 +54,7 @@
 
                 {{-- Service selection --}}
                 <div class="form-group">
-                    <label>Select Services <span class="service-count">(0 selected)</span></label>
+                    <label>Select Services</label>
                     <div class="service-grid" id="serviceGrid">
                         <!-- populated by JS -->
                     </div>
@@ -162,7 +162,6 @@
         }
 
         function updateServiceSummary() {
-            const count = document.querySelector('.service-count');
             const summary = document.getElementById('selectedServicesSummary');
             const list   = document.getElementById('summaryList');
             const dur    = document.getElementById('totalDuration');
