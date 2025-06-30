@@ -87,13 +87,13 @@
 
                 <div id="calendar">
                     <div class="calendar-nav">
-                        <button class="nav-btn" onclick="changeMonth(-1)">
-                            <i class="ri-arrow-left-line"></i> Previous
-                        </button>
-                        <div class="current-month" id="currentMonth">June 2025</div>
-                        <button class="nav-btn" onclick="changeMonth(1)">
-                            Next <i class="ri-arrow-right-line"></i>
-                        </button>
+                    <button class="nav-btn" type="button" onclick="changeMonth(-1)">
+                        <i class="ri-arrow-left-line"></i> Previous
+                    </button>
+                    <div class="current-month" id="currentMonth">June 2025</div>
+                    <button class="nav-btn" type="button" onclick="changeMonth(1)">
+                        Next <i class="ri-arrow-right-line"></i>
+                    </button>
                     </div>
                     <div class="calendar-grid" id="calendarGrid">
                         <!-- Calendar will be generated here -->
