@@ -7,6 +7,7 @@ use App\Http\Controllers\Staff\AppointmentController as StaffAppointment;
 use App\Http\Controllers\Customer\AppointmentController as CustomerAppointment;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\Admin\AppointmentController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,4 +74,9 @@ Route::middleware(['auth'])->group(function () {
     
     Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
 });
+
+Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+Route::get('reset-password', [PasswordResetLinkController::class, 'showResetForm'])->name('password.reset.form');
+Route::post('reset-password', [PasswordResetLinkController::class, 'update'])->name('password.reset.update');
 
