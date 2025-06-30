@@ -88,22 +88,16 @@
                                     </div>
                                     
                                     <div class="appointment-actions">
-                                        @if($appointment->status !== 'Cancelled' && $appointment->start_time >= now())
-                                            @php
-                                                $canCancel = now()->diffInMinutes($appointment->start_time, false) >= 60;
-                                            @endphp
-                                            
-                                            @if($canCancel)
-                                                <form action="{{ route('customer.appointments.destroy', $appointment->id) }}" method="POST" class="cancel-form" data-appointment-id="{{ $appointment->id }}">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="button" class="cancel-btn sweet-cancel-button">Cancel</button>
-                                                </form>
-                                            @else
-                                                <div class="cancel-disabled" style="color: #999; font-size: 0.85rem; font-style: italic;">
-                                                    Cannot cancel (less than 1 hour away)
-                                                </div>
-                                            @endif
+                                        @if($appointment->status !== 'Cancelled' && $appointment->can_cancel)
+                                            <form action="{{ route('customer.appointments.destroy', $appointment->id) }}" method="POST" class="cancel-form" data-appointment-id="{{ $appointment->id }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="cancel-btn sweet-cancel-button">Cancel</button>
+                                            </form>
+                                        @elseif($appointment->status !== 'Cancelled')
+                                            <div class="cancel-disabled" style="color: #999; font-size: 0.85rem; font-style: italic;">
+                                                Cannot cancel (less than 1 hour away)
+                                            </div>
                                         @endif
                                     </div>
                                 </div>

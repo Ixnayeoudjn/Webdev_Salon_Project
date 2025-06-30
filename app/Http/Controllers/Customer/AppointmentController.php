@@ -13,17 +13,32 @@ class AppointmentController extends Controller
 {
     public function index()
     {
-        $appointments = Appointment::where('customer_id', Auth::id())->with('service', 'staff')->latest()->get();
-        $now = now();
-        $upcoming = $appointments->filter(function($a) use ($now) {
-            return $a->start_time >= $now;
+        $appointments = Appointment::where('customer_id', Auth::id())
+            ->with('service', 'staff')
+            ->latest()
+            ->get();
+
+        $now = Carbon::now();
+
+        // UPCOMING
+        $upcoming = $appointments->filter(function ($a) use ($now) {
+            $start = $a->start_time instanceof Carbon ? $a->start_time : Carbon::parse($a->start_time);
+            return $start >= $now;
         });
+
         foreach ($upcoming as $a) {
-            $a->can_cancel = ($a->status !== 'Cancelled') && (Carbon::parse($a->start_time)->greaterThan($now));
+            $start = $a->start_time instanceof Carbon ? $a->start_time : Carbon::parse($a->start_time);
+            // Only allow cancel if more than 1 hour in the future
+            $minutesUntil = $start->diffInMinutes($now, false);
+            $a->can_cancel = $a->status !== 'Cancelled' && $minutesUntil >= 60;
         }
-        $past = $appointments->filter(function($a) use ($now) {
-            return $a->start_time < $now;
+
+        // PAST
+        $past = $appointments->filter(function ($a) use ($now) {
+            $start = $a->start_time instanceof Carbon ? $a->start_time : Carbon::parse($a->start_time);
+            return $start < $now;
         });
+
         return view('customers.appointments.index', compact('upcoming', 'past'));
     }
 
@@ -173,11 +188,16 @@ public function store(Request $request)
     {
         $appointment = Appointment::where('customer_id', Auth::id())->findOrFail($id);
 
-        // Check if appointment is less than 1 hour away
-        $minutesUntilAppointment = Carbon::now()->diffInMinutes(Carbon::parse($appointment->start_time), false);
-        
-        if ($minutesUntilAppointment < 60) {
-            return back()->withErrors('Cancellations must be made at least 1 hour before the appointment time. Your appointment is in ' . $minutesUntilAppointment . ' minutes.');
+        $startTime = $appointment->start_time instanceof Carbon
+            ? $appointment->start_time
+            : Carbon::parse($appointment->start_time);
+
+        $minutesUntil = $startTime->diffInMinutes(now(), false);
+
+        if ($minutesUntil < 60) {
+            return back()->withErrors(
+                'Cancellations must be made at least 1 hour before the appointment time.'
+            );
         }
 
         if ($appointment->status === 'Cancelled') {
@@ -187,7 +207,9 @@ public function store(Request $request)
         $appointment->status = 'Cancelled';
         $appointment->save();
 
-        return redirect()->route('customer.appointments.index')->with('success', 'Appointment cancelled successfully.');
+        return redirect()
+            ->route('customer.appointments.index')
+            ->with('success', 'Appointment cancelled successfully.');
     }
 
 }
