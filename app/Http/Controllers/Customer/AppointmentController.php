@@ -8,6 +8,7 @@ use App\Models\Appointment;
 use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AppointmentController extends Controller
 {
@@ -28,8 +29,7 @@ class AppointmentController extends Controller
 
         foreach ($upcoming as $a) {
             $start = $a->start_time instanceof Carbon ? $a->start_time : Carbon::parse($a->start_time);
-            // Only allow cancel if more than 1 hour in the future
-            $minutesUntil = $start->diffInMinutes($now, false);
+            $minutesUntil = Carbon::now()->diffInMinutes($start, false);
             $a->can_cancel = $a->status !== 'Cancelled' && $minutesUntil >= 60;
         }
 
@@ -184,32 +184,35 @@ public function store(Request $request)
         return redirect()->route('customer.appointments.index')->with('success', 'Appointment updated.');
     }
 
-    public function destroy($id)
-    {
-        $appointment = Appointment::where('customer_id', Auth::id())->findOrFail($id);
+public function destroy($id)
+{
+    $appointment = Appointment::where('customer_id', Auth::id())->findOrFail($id);
 
-        $startTime = $appointment->start_time instanceof Carbon
-            ? $appointment->start_time
-            : Carbon::parse($appointment->start_time);
+    $startTime = $appointment->start_time instanceof Carbon
+        ? $appointment->start_time
+        : Carbon::parse($appointment->start_time);
 
-        $minutesUntil = $startTime->diffInMinutes(now(), false);
+    $now = Carbon::now('Asia/Manila');
+    $startTime = $startTime->timezone('Asia/Manila');
 
-        if ($minutesUntil < 60) {
-            return back()->withErrors(
-                'Cancellations must be made at least 1 hour before the appointment time.'
-            );
-        }
+    $minutesUntil = $now->diffInMinutes($startTime, false);
 
-        if ($appointment->status === 'Cancelled') {
-            return back()->withErrors('This appointment is already cancelled.');
-        }
-
-        $appointment->status = 'Cancelled';
-        $appointment->save();
-
-        return redirect()
-            ->route('customer.appointments.index')
-            ->with('success', 'Appointment cancelled successfully.');
+    if ($minutesUntil < 60) {
+        return back()->withErrors(
+            'Cancellations must be made at least 1 hour before the appointment time.'
+        );
     }
+
+    if ($appointment->status === 'Cancelled') {
+        return back()->withErrors('This appointment is already cancelled.');
+    }
+
+    $appointment->status = 'Cancelled';
+    $appointment->save();
+
+    return redirect()
+        ->route('customer.appointments.index')
+        ->with('success', 'Appointment cancelled successfully.');
+}
 
 }
